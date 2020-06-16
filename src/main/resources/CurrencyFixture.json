@@ -1,0 +1,90 @@
+[
+	{
+		"name": "Bitcoin",
+		"code": "BTC"
+	},
+	{
+		"name": "Ethereum",
+		"code": "ETH"
+	},
+	{
+		"name": "XRP",
+		"code": "XRP"
+	},
+	{
+		"name": "Bitcoin Cash",
+		"code": "BCH"
+	},
+	{
+		"name": "Litecoin",
+		"code": "LTC"
+	},
+	{
+		"name": "EOS",
+		"code": "EOS"
+	},
+	{
+		"name": "Tezos",
+		"code": "XTZ"
+	},
+	{
+		"name": "Stellar Lumens",
+		"code": "XLM"
+	},
+	{
+		"name": "Chainlink",
+		"code": "LINK"
+	},
+	{
+		"name": "Ethereum Classic",
+		"code": "ETC"
+	},
+	{
+		"name": "USD Coin",
+		"code": "USDC"
+	},
+	{
+		"name": "Dash",
+		"code": "DASH"
+	},
+	{
+		"name": "Maker",
+		"code": "MKR"
+	},
+	{
+		"name": "Cosmos",
+		"code": "ATOM"
+	},
+	{
+		"name": "Zcash",
+		"code": "ZEC"
+	},
+	{
+		"name": "Basic Attention Token",
+		"code": "BAT"
+	},
+	{
+		"name": "0x",
+		"code": "ZRX"
+	},
+	{
+		"name": "OMG Network",
+		"code": "OMG"
+	},
+	{
+		"name": "Kyber Network",
+		"code": "KNC"
+	},
+	{
+		"name": "Augur",
+		"code": "REP"
+	},
+	{
+		"name": "Dai",
+		"code": "DAI"
+	},
+	{
+		"name": "Orchid",
+		"code": "OXT"
+	}
+]

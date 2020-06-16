@@ -1,0 +1,137 @@
+{
+	"short-term": {
+		"delta": 2.5
+	},
+	
+	"BTC": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"ETH": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"XRP": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"BCH": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"LTC": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"EOS": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"XTZ": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"XLM": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"LINK": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"ETC": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"USDC": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"DASH": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"MKR": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"ATOM": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"ZEC": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"BAT": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"ZRX": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"OMG": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"KNC": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"REP": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"DAI": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	},
+	
+	"OXT": {
+		"type": "ignored",
+		"threshold": 0.0,
+		"target-mark": 0.0
+	}
+}
