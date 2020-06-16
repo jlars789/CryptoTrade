@@ -7,6 +7,9 @@ public class Currency {
 	private String code;
 	private double exchangeRate;
 	private double amountOwned;
+	private double percentChangeDay;
+	
+	private String ID;
 	
 	enum Type {
 		IGNORED, WATCHED, SHORT_TERM, LONG_TERM
@@ -17,14 +20,17 @@ public class Currency {
 	private double[] threshold = new double[2];
 	private Type tag;
 	
-	public Currency(String name, String code) {
+	public Currency(String name, String code, String ID) {
 		this.name = name;
 		this.code = code;
+		this.ID = ID;
+		
 	}
 	
-	public void dataUpdate(double exchangeRate, double amountOwned) {
+	public void dataUpdate(double exchangeRate, double amountOwned, double percentChangeDay) {
 		this.exchangeRate = exchangeRate;
 		this.amountOwned = amountOwned;
+		this.percentChangeDay = percentChangeDay;
 	}
 	
 	public void setUserPreferences(double targetMark, double[] threshold, String tag) {
@@ -44,6 +50,10 @@ public class Currency {
 	
 	public String getName() {
 		return this.name;
+	}
+	
+	public String getID() {
+		return this.ID;
 	}
 
 }

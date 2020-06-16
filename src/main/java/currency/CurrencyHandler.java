@@ -8,7 +8,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import aws.S3Upload;
 import coinbase.APICallBuilder;
+import coinbase.APICallBuilderPro;
 
 public class CurrencyHandler {
 	
@@ -30,33 +32,60 @@ public class CurrencyHandler {
         for(int i = 0; i < array.length(); i++) {
         	String name = array.getJSONObject(i).getString("name");
         	String code = array.getJSONObject(i).getString("code");
-        	currencyArray[i] = new Currency(name, code);
+        	String id = array.getJSONObject(i).getString("asset_id");
+        	currencyArray[i] = new Currency(name, code, id);
         }
 	}
 	
+	public static String findCurrencyID(String code) {
+		String ID = "Invalid code";
+		for(int i = 0; i < currencyArray.length; i++) {
+			if(currencyArray[i].getCode().equals(code)) {
+				ID = currencyArray[i].getID();
+			}
+		}
+		return ID;
+	}
+	
 	public static void updateValues() {
-		JSONObject rates = APICallBuilder.getMassExchangeRate();
-		JSONObject acctData = APICallBuilder.getAccountData();
-		JSONArray arr = acctData.getJSONArray("data");
+		JSONArray rates = APICallBuilder.getMassExchangeRate();
+		JSONArray acctData = APICallBuilderPro.getAccountData();
 		
 		for(int i = 0; i < currencyArray.length; i++) {
 			String id = currencyArray[i].getCode();
+			BigDecimal rate = null;
+			double change = 0;
+			boolean cannotFind = true;
+			for(int j = 0; j < rates.length(); j++) {
+				if(rates.getJSONObject(j).getString("symbol").equals(currencyArray[i].getCode())) {
+					rate = new BigDecimal(rates.getJSONObject(j).getString("priceUsd"));
+					change = Double.parseDouble(rates.getJSONObject(j).getString("changePercent24Hr"));
+					cannotFind = false;
+				}
+			}
 			
-			BigDecimal rate = new BigDecimal(rates.getJSONObject("data").getJSONObject("rates").getString(id));
+			if(cannotFind) System.out.println("Cannot find " + currencyArray[i].getCode());
+			
+			
 			BigDecimal one = new BigDecimal("1.0");
 			rate = one.divide(rate, 3, RoundingMode.HALF_UP);
 			double amount = 0;
 			
-			for(int j = 0; j < arr.length(); j++) {
-				JSONObject bal = arr.getJSONObject(j).getJSONObject("balance");
-				if(bal.getString("currency").equals(id)) {
-					amount = bal.getDouble("amount");
+			String caller = "";
+			
+			for(int j = 0; j < acctData.length(); j++) {
+				double bal = acctData.getJSONObject(j).getDouble("balance");
+				if(acctData.getJSONObject(j).getString("currency").equals(id)) {
+					caller = acctData.getJSONObject(j).getString("id");
+					amount = bal;
 					break;
 				}
 			}
 			
-			currencyArray[i].dataUpdate(rate.doubleValue(), amount);
+			currencyArray[i].dataUpdate(rate.doubleValue(), amount, change);
 		}
+		S3Upload.uploadString(acctData.toString(1), "ids/pro-wallet-data.json");
+        
 	}
 
 }

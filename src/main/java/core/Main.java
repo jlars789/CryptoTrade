@@ -1,6 +1,7 @@
 package core;
 
 
+import java.io.InputStream;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -9,9 +10,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
 import aws.S3Upload;
 //import aws.S3Upload;
 import coinbase.APICallBuilder;
+import coinbase.APICallBuilderPro;
+import coinbase.APIUtility;
 import currency.CurrencyHandler;
 
 public class Main {
@@ -21,15 +28,12 @@ public class Main {
 		
 		LocalDateTime init = LocalDateTime.now();
 		
-		APICallBuilder.initialize();
+		APIUtility.initialize();
 		CurrencyHandler.initialize();
 		CurrencyHandler.updateValues();
-		/*
-		System.out.println(APICallBuilder.getMassExchangeRate().toString(1));
-		System.out.println(APICallBuilder.getAccountData().toString(1));
-		*/
+		
 		LocalDateTime finish = LocalDateTime.now();
-		System.out.println("Time to complete: " + (float)((Duration.between(init, finish).toMillis())/1000) + "s");
+		System.out.println("Time to complete: " + ((float)(Duration.between(init, finish).toMillis())/1000) + "s");
 		
 		long duration[] = getTimeTo();
 		//15 second based operations

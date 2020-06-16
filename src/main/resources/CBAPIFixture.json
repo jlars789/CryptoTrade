@@ -1,37 +1,47 @@
 {
-	"exchange_rate": {
+	"exchange_rate_cb": {
 		"method": "GET",
-		"requestPath": "https://api.coinbase.com/v2/prices/${var}-USD/spot"
+		"requestPath": "/v2/prices/${var}-USD/spot"
+	},
+	
+	"exchange_rate_cc": {
+		"method": "GET",
+		"requestPath": "/v2/assets"
 	},
 	
 	"bulk_rates": {
 		"method": "GET",
-		"requestPath": "https://api.coinbase.com/v2/exchange-rates"
+		"requestPath": "/v2/exchange-rates"
 	},
 	
 	"time": {
 		"method": "GET",
-		"requestPath": "https://api.pro.coinbase.com/v2/time"
+		"requestPath": "/v2/time"
 	},
 	
 	"convert": {
 		"method": "POST",
-		"requestPath": "https://api.coinbase.com/v2/accounts/${var}/transactions"
+		"requestPath": "/v2/accounts/${var}/transactions"
 	
+	},
+	
+	"transactions": {
+		"method": "GET",
+		"requestPath": "/v2/accounts/${var}/transactions"
 	},
 
 	"convert_pro": {
 		"method": "POST",
-		"requestPath": "https://api.pro.coinbase.com/conversions"
+		"requestPath": "/conversions"
 	},
 	
 	"wallet_data": {
 		"method": "GET",
-		"requestPath": "https://api.coinbase.com/v2/accounts"
+		"requestPath": "/v2/accounts"
 	},
 
 	"wallet_data_pro": {
 		"method": "GET",
-		"requestPath": "https://api.pro.coinbase.com/accounts"
+		"requestPath": "/accounts"
 	}
 }
