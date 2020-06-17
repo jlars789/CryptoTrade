@@ -57,6 +57,8 @@ public class APIUtility {
 		String signature = getHMACHeader(secretKey, timestamp, "GET", requestPath, "");
 		String url = CB_BASE_URL + requestPath;
 		
+		System.out.println("Attempting to GET data from " + url);
+		
 		Request request = null;
 		if(withAuth) {
 			request = new Request.Builder()
@@ -88,7 +90,7 @@ public class APIUtility {
 		String url = CB_BASE_URL + requestPath;
 		RequestBody rb = RequestBody.create(JSON, body.toString());
 		
-		System.out.println(url);
+		System.out.println("Attempting to POST data to " + url);
 		
 		Request request = new Request.Builder()
 				.addHeader(CB_ACCESS_KEY, accessKey)
@@ -107,6 +109,8 @@ public class APIUtility {
 		String timestamp = getEpochTime();
 		String signature = getHMACHeaderPro(proSecretKey, timestamp, "GET", requestPath, "");
 		String url = CB_PRO_URL + requestPath;
+		
+		System.out.println("Attempting to GET data from " + url);
 		
 		Request request = null;
 		if(withAuth) {
@@ -137,6 +141,8 @@ public class APIUtility {
 		String url = CB_PRO_URL + requestPath;
 		RequestBody rb = RequestBody.create(JSON, body.toString());
 		
+		System.out.println("Attempting to POST data to " + url);
+		
 		Request request = new Request.Builder()
 				.addHeader(CB_ACCESS_KEY, proAccessKey)
 				.addHeader(CB_ACCESS_SIGN, signature)
@@ -153,7 +159,7 @@ public class APIUtility {
 	
 	public static Request buildCoinCapRequest(String requestPath) {
 		String url = "http://" +COINCAP_URL + requestPath + "?limit=250";
-		System.out.println(url);
+		System.out.println("Attempting to GET data from " + url);
 		Request request = new Request.Builder()
 				.addHeader("Accept-Encoding", "deflate")
 				.url(url)
@@ -183,26 +189,6 @@ public class APIUtility {
     }
     
     public static String getHMACHeaderPro(String secretKey, String timestamp, String method, String requestPath, String body) {
-    	/*
-    	String prehash = timestamp + method.toUpperCase() + requestPath;
-    	
-    	if(method.equals("POST") || method.equals("PUT")) {
-    		prehash += body;
-    	}
-
-    	 SecretKeySpec keyspec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA256");
-    	 Mac sha256 = null;
-		try {
-			sha256 = (Mac) Mac.getInstance("HmacSHA256");
-			sha256.init(keyspec);
-		} catch (NoSuchAlgorithmException | InvalidKeyException e) {
-			e.printStackTrace();
-		}
-		
-		String hash = Base64.encodeBase64String((sha256.doFinal(prehash.getBytes())));
-    	 
-    	return hash;
-    	*/
     	String prehash = timestamp + method.toUpperCase() + requestPath;
     	
     	if(method.equals("POST") || method.equals("PUT")) {

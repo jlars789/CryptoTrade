@@ -11,29 +11,6 @@ import okhttp3.Response;
 
 public class APICallBuilder {
 	
-	/*
-	public static JSONObject getMassExchangeRate() {
-		String url = APIUtility.requests.getJSONObject("bulk_rates").getString("requestPath");
-		Request request = APIUtility.buildGetRequest(url, false);
-		Response res;
-		
-		JSONObject obj = null;
-		
-		try {
-			res = APICommunicator.sendRequest(request);
-			String data = res.body().string();
-			//System.out.println(data);
-			obj = new JSONObject(data);
-		} catch (IOException e) {
-			e.printStackTrace();
-			ErrorLogger.logException(e);
-		}
-		
-		return obj;
-		
-	}
-	*/
-	
 	public static JSONArray getMassExchangeRate() {
 		String url = APIUtility.requests.getJSONObject("exchange_rate_cc").getString("requestPath");
 		Request request = APIUtility.buildCoinCapRequest(url);

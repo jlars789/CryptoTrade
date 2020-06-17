@@ -10,6 +10,8 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import notifications.ErrorLogger;
+
 public class MessageSender {
 	
 	public static void deliverMessage(String subject, String message) {
@@ -28,7 +30,7 @@ public class MessageSender {
                         return new PasswordAuthentication(username, password);
                     }
                 });
-
+        System.out.println("Attempting to send email");
         try {
 
             Message message1 = new MimeMessage(session);
@@ -43,8 +45,11 @@ public class MessageSender {
             Transport.send(message1);
 
         } catch (MessagingException e) {
-            e.printStackTrace();
+        	ErrorLogger.logException(e);
+        	System.out.println("Failed to send email");
         }
+        
+        System.out.println("Email successfully sent!");
 	}
 
 }

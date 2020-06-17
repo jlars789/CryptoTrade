@@ -27,12 +27,15 @@ public class SendSMS {
 				.addHeader("x-rapidapi-key", "6052ac844fmshb83d8c25601bcc8p170b89jsnb7bf4e9186ff")
 				.addHeader("content-type", "application/x-www-form-urlencoded")
 				.build();
-	
+		System.out.println("Attempting to send text message");
 		try {
 			Response response = client.newCall(request).execute();
+			System.out.println(response.code() + ": " + response.message());
 		} catch(IOException e) {
+			System.out.println("Failed to send text");
 			ErrorLogger.logException(e);
 		}
+		System.out.println("Text successfully sent");
 	}
 	
 	private static String replace(String str) {

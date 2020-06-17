@@ -15,6 +15,7 @@ public class APICommunicator {
 		if(!response.isSuccessful()) {
 			throw new IOException("API Call not successful. Error code: " + response.code() + ": " + response.message() + " " + response.body().string());
 		} else {
+			System.out.println(response.code() + ": " + response.message());
 			return response;
 		}
 	}

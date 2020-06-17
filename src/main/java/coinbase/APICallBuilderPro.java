@@ -13,8 +13,6 @@ public class APICallBuilderPro {
 	
 	public static JSONArray getAccountData() {
 		String requestPath = APIUtility.requests.getJSONObject("wallet_data_pro").getString("requestPath");
-		//String method = APIUtility.requests.getJSONObject("wallet_data_pro").getString("method");
-		
 		Request request = APIUtility.buildProGetRequest(requestPath, true);
 		
 		Response res;
