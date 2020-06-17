@@ -2,19 +2,17 @@ package currency;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import aws.S3Upload;
 import coinbase.APICallBuilder;
-import coinbase.APICallBuilderPro;
+import coinbase.pro.APICallPro;
 
 public class CurrencyHandler {
 	
 	private static Currency[] currencyArray;
+	public static String[] trades;
 
 	public static void initialize() {
 
@@ -35,6 +33,52 @@ public class CurrencyHandler {
         	String id = array.getJSONObject(i).getString("asset_id");
         	currencyArray[i] = new Currency(name, code, id);
         }
+        
+        JSONArray j = APICallPro.getTrades();
+        
+        for(int i = 0; i < j.length(); i++) {
+        	String temp = j.getJSONObject(i).getString("base_currency");
+        	String trade = j.getJSONObject(i).getString("id");
+        	double min = j.getJSONObject(i).getDouble("base_min_size");
+        	getCurrencyByCode(temp).addTrade(trade, min);
+        	//System.out.println("Object " + temp + " had trade " + trade + " added to it. Minimum value: " + min);
+        }
+	}
+	
+	public static Currency[] findScalpEff() {
+		int n = currencyArray.length; 
+		  
+        // One by one move boundary of unsorted subarray 
+        for (int i = 0; i < n-1; i++) 
+        { 
+            // Find the minimum element in unsorted array 
+            int min_idx = i; 
+            for (int j = i+1; j < n; j++) { 
+            	double com0 = currencyArray[j].getExchangeRate() * currencyArray[j].getMinTradeValue();
+            	double com1 = currencyArray[min_idx].getExchangeRate() * currencyArray[min_idx].getMinTradeValue();
+                if (com0 < com1) 
+                    min_idx = j; 
+            }
+  
+            // Swap the found minimum element with the first 
+            // element 
+            Currency temp = currencyArray[min_idx]; 
+            currencyArray[min_idx] = currencyArray[i]; 
+            currencyArray[i] = temp; 
+        } 
+        Currency[] ret = currencyArray;
+        return ret;
+	}
+	
+	public static Currency getCurrencyByCode(String code) {
+		Currency c = null;
+		for(int i= 0; i < currencyArray.length; i++) {
+			if(currencyArray[i].getCode().equals(code)) {
+				c = currencyArray[i];
+				break;
+			}
+		}
+		return c;
 	}
 	
 	public static String findCurrencyID(String code) {
@@ -49,7 +93,7 @@ public class CurrencyHandler {
 	
 	public static void updateValues() {
 		JSONArray rates = APICallBuilder.getMassExchangeRate();
-		JSONArray acctData = APICallBuilderPro.getAccountData();
+		JSONArray acctData = APICallPro.getAccountData();
 		
 		for(int i = 0; i < currencyArray.length; i++) {
 			String id = currencyArray[i].getCode();
@@ -66,17 +110,12 @@ public class CurrencyHandler {
 			
 			if(cannotFind) System.out.println("Cannot find " + currencyArray[i].getCode());
 			
-			
-			BigDecimal one = new BigDecimal("1.0");
-			rate = one.divide(rate, 3, RoundingMode.HALF_UP);
 			double amount = 0;
-			
-			String caller = "";
 			
 			for(int j = 0; j < acctData.length(); j++) {
 				double bal = acctData.getJSONObject(j).getDouble("balance");
 				if(acctData.getJSONObject(j).getString("currency").equals(id)) {
-					caller = acctData.getJSONObject(j).getString("id");
+					acctData.getJSONObject(j).getString("id");
 					amount = bal;
 					break;
 				}

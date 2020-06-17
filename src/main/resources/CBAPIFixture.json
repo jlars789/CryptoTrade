@@ -43,5 +43,15 @@
 	"wallet_data_pro": {
 		"method": "GET",
 		"requestPath": "/accounts"
+	},
+	
+	"products": {
+		"method": "GET",
+		"requestPath": "/products"
+	},
+	
+	"trade": {
+		"method": "GET",
+		"requestPath": "/orders"
 	}
 }

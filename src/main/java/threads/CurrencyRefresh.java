@@ -10,8 +10,8 @@ public class CurrencyRefresh implements Runnable {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
-
+		CurrencyHandler.updateValues();
+		
 	}
 
 }

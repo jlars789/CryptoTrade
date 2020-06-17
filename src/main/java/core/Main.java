@@ -17,9 +17,11 @@ import org.json.JSONTokener;
 import aws.S3Upload;
 //import aws.S3Upload;
 import coinbase.APICallBuilder;
-import coinbase.APICallBuilderPro;
 import coinbase.APIUtility;
+import coinbase.pro.Orders;
+import currency.Currency;
 import currency.CurrencyHandler;
+import threads.CurrencyRefresh;
 
 public class Main {
 	
@@ -28,17 +30,22 @@ public class Main {
 		
 		LocalDateTime init = LocalDateTime.now();
 		
-		APIUtility.initialize();
-		CurrencyHandler.initialize();
-		CurrencyHandler.updateValues();
+		startUp();
+		LocalDateTime startUp = LocalDateTime.now();
+		System.out.println("Setup time to complete: " + ((float)(Duration.between(init, startUp).toMillis())/1000) + "s");
 		
-		LocalDateTime finish = LocalDateTime.now();
-		System.out.println("Time to complete: " + ((float)(Duration.between(init, finish).toMillis())/1000) + "s");
+		testFunction();
+		LocalDateTime test = LocalDateTime.now();
+		System.out.println("Test time to complete: " + ((float)(Duration.between(startUp, test).toMillis())/1000) + "s");
+		
+		
+		
 		
 		long duration[] = getTimeTo();
 		//15 second based operations
 		ScheduledExecutorService quMinuteBasedOperator = Executors.newScheduledThreadPool(1);
-		ScheduledFuture<?> quMinuteScheduler = quMinuteBasedOperator.scheduleAtFixedRate(null, duration[0], 15000, TimeUnit.MILLISECONDS);
+		ScheduledFuture<?> quMinuteScheduler = quMinuteBasedOperator.scheduleAtFixedRate(new CurrencyRefresh(), duration[0], 15000, TimeUnit.MILLISECONDS);
+		System.out.println("Passed");
 		
 		//minute based operations
 		ScheduledExecutorService minuteBasedOperator = Executors.newScheduledThreadPool(1);
@@ -64,6 +71,16 @@ public class Main {
 		ScheduledExecutorService weekBasedOperator = Executors.newScheduledThreadPool(1);
 		ScheduledFuture<?> weekScheduler = weekBasedOperator.scheduleAtFixedRate(null, duration[6], 604800000, TimeUnit.MILLISECONDS);
 
+	}
+	
+	private static void testFunction() {
+		
+	}
+	
+	private static void startUp() {
+		APIUtility.initialize();
+		CurrencyHandler.initialize();
+		CurrencyHandler.updateValues();
 	}
 	
 	public static long[] getTimeTo() {

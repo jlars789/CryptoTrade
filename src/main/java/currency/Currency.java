@@ -1,5 +1,6 @@
 package currency;
 
+import java.util.ArrayList;
 
 public class Currency {
 	
@@ -16,14 +17,19 @@ public class Currency {
 	}
 	
 	private double targetMark;
-	//0 is upper, 1 is lower
 	private double[] threshold = new double[2];
 	private Type tag;
+	
+	private double initialOwned;
+	
+	private ArrayList<String> availableTrades;
+	private double minTradeValue;
 	
 	public Currency(String name, String code, String ID) {
 		this.name = name;
 		this.code = code;
 		this.ID = ID;
+		this.availableTrades = new ArrayList<String>();
 		
 	}
 	
@@ -42,6 +48,44 @@ public class Currency {
 		
 		this.targetMark = targetMark;
 		this.threshold = threshold;
+	}
+	
+	public boolean canTrade(String trade) {
+		String tradeID = this.code + "-" + trade;
+		return availableTrades.contains(tradeID);
+	}
+	
+	public void addTrade(String tradeID, double minValue) {
+		if(!availableTrades.contains(tradeID)) availableTrades.add(tradeID);
+		this.minTradeValue = minValue;
+	}
+	
+	public void setUserData(double initialOwned) {
+		this.initialOwned = initialOwned;
+	}
+	
+	public double getExchangeRate() {
+		return this.exchangeRate;
+	}
+	
+	public double getAmountOwned() {
+		return this.amountOwned;
+	}
+	
+	public double getFiatValue() {
+		return (this.exchangeRate * this.amountOwned);
+	}
+	
+	public double convertFromFiat(double fiatValue) {
+		 return fiatValue/this.exchangeRate;
+	}
+	
+	public double getMinTradeValue() {
+		return minTradeValue;
+	}
+	
+	public double getChange() {
+		return this.percentChangeDay;
 	}
 	
 	public String getCode() {
