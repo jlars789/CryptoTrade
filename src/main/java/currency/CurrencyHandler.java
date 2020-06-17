@@ -3,11 +3,14 @@ package currency;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import aws.S3Pull;
 import aws.S3Upload;
 import coinbase.APICallBuilder;
 import coinbase.pro.APICallPro;
+import coinbase.pro.Orders;
 
 public class CurrencyHandler {
 	
@@ -41,11 +44,29 @@ public class CurrencyHandler {
         	String trade = j.getJSONObject(i).getString("id");
         	double min = j.getJSONObject(i).getDouble("base_min_size");
         	getCurrencyByCode(temp).addTrade(trade, min);
-        	//System.out.println("Object " + temp + " had trade " + trade + " added to it. Minimum value: " + min);
         }
+        updateValues();
 	}
 	
-	public static Currency[] findScalpEff() {
+	public static void updateUserPreferences() {
+		JSONObject userPref = new JSONObject(S3Pull.readObject("user_pref/user_preferences.json"));
+		for(int i = 0; i < currencyArray.length; i++) {
+			double targetMark = userPref.getJSONObject(currencyArray[i].getCode()).getDouble("initial");
+			double threshold = userPref.getJSONObject(currencyArray[i].getCode()).getDouble("threshold");
+			String tag = userPref.getJSONObject(currencyArray[i].getCode()).getString("type");
+			currencyArray[i].setUserPreferences(targetMark, threshold, tag);
+		}
+	}
+	
+	public static void analyzeScalp() {
+		for(int i = 0; i < currencyArray.length; i++) {
+			if(currencyArray[i].shortTermTrade()) {
+				Orders.marketSellFiat(currencyArray[i].getCode(), currencyArray[i].getScalpTrade());
+			}
+		}
+	}
+	
+	public static Currency[] sortByScalpEff() {
 		int n = currencyArray.length; 
 		  
         // One by one move boundary of unsorted subarray 

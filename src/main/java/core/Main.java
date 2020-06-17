@@ -15,17 +15,12 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import aws.S3Upload;
-//import aws.S3Upload;
-import coinbase.APICallBuilder;
 import coinbase.APIUtility;
-import coinbase.pro.Orders;
-import currency.Currency;
 import currency.CurrencyHandler;
 import threads.CurrencyRefresh;
 
 public class Main {
-	
-	@SuppressWarnings("unused")
+	//https://github.com/jlars789/CryptoTrade
 	public static void main(String[] args) {
 		
 		LocalDateTime init = LocalDateTime.now();
@@ -37,11 +32,22 @@ public class Main {
 		testFunction();
 		LocalDateTime test = LocalDateTime.now();
 		System.out.println("Test time to complete: " + ((float)(Duration.between(startUp, test).toMillis())/1000) + "s");
+		System.out.println("Memory used: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1000000 + "MB");
+
+	}
+	
+	private static void testFunction() {
 		
-		
-		
-		
+	}
+	
+	private static void startUp() {
+		APIUtility.initialize();
+		CurrencyHandler.initialize();
+	}
+	
+	public static final void scheduledServiceCreator() {
 		long duration[] = getTimeTo();
+		
 		//15 second based operations
 		ScheduledExecutorService quMinuteBasedOperator = Executors.newScheduledThreadPool(1);
 		ScheduledFuture<?> quMinuteScheduler = quMinuteBasedOperator.scheduleAtFixedRate(new CurrencyRefresh(), duration[0], 15000, TimeUnit.MILLISECONDS);
@@ -70,17 +76,6 @@ public class Main {
 		//Daily scheduler
 		ScheduledExecutorService weekBasedOperator = Executors.newScheduledThreadPool(1);
 		ScheduledFuture<?> weekScheduler = weekBasedOperator.scheduleAtFixedRate(null, duration[6], 604800000, TimeUnit.MILLISECONDS);
-
-	}
-	
-	private static void testFunction() {
-		
-	}
-	
-	private static void startUp() {
-		APIUtility.initialize();
-		CurrencyHandler.initialize();
-		CurrencyHandler.updateValues();
 	}
 	
 	public static long[] getTimeTo() {

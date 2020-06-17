@@ -49,6 +49,7 @@ dependencies {
     
     compile group: 'commons-codec', name: 'commons-codec', version: '1.14'
 	compile group: 'com.amazonaws', name: 'aws-java-sdk', version: '1.11.801'
-    
+	
+	compile group: 'org.apache.commons', name: 'commons-math3', version: '3.0'
     
 }

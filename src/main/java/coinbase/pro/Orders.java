@@ -41,6 +41,7 @@ public class Orders {
 		}
 		
 		OrderTracker.addTransaction(new Transaction(obj));
+		System.out.println("Sold " + code + " for $" + amount);
 		return obj;
 		
 	}
@@ -71,6 +72,7 @@ public class Orders {
 		}
 		
 		OrderTracker.addTransaction(new Transaction(obj));
+		System.out.println("Bought " + code + " for $" + amount);
 		return obj;
 	}
 	

@@ -39,7 +39,7 @@ public class Currency {
 		this.percentChangeDay = percentChangeDay;
 	}
 	
-	public void setUserPreferences(double targetMark, double[] threshold, String tag) {
+	public void setUserPreferences(double targetMark, double threshold, String tag) {
 		if(tag.equalsIgnoreCase(Type.IGNORED.toString())) this.tag=Type.IGNORED;
 		else if(tag.equalsIgnoreCase(Type.WATCHED.toString())) this.tag=Type.WATCHED;
 		else if(tag.equalsIgnoreCase(Type.SHORT_TERM.toString())) this.tag=Type.SHORT_TERM;
@@ -47,12 +47,24 @@ public class Currency {
 		else if(this.tag == null) this.tag=Type.IGNORED;
 		
 		this.targetMark = targetMark;
-		this.threshold = threshold;
+		this.threshold[0] = validScalpValue(threshold);
+		this.threshold[1] = validScalpValue(threshold);
+	}
+	
+	public double validScalpValue(double value) {
+		if((exchangeRate*minTradeValue) > value){
+			value = exchangeRate*minTradeValue;
+		}
+		return value;
 	}
 	
 	public boolean canTrade(String trade) {
 		String tradeID = this.code + "-" + trade;
 		return availableTrades.contains(tradeID);
+	}
+	
+	public boolean shortTermTrade() {
+		return ((this.tag.equals(Type.SHORT_TERM)) && (this.getFiatValue() > this.getScalpTradeValue()));
 	}
 	
 	public void addTrade(String tradeID, double minValue) {
@@ -72,8 +84,20 @@ public class Currency {
 		return this.amountOwned;
 	}
 	
+	public double getScalpTrade() {
+		return this.getFiatValue() - this.targetMark;
+	}
+	
+	public double getThreshold() {
+		return this.threshold[0];
+	}
+	
 	public double getFiatValue() {
 		return (this.exchangeRate * this.amountOwned);
+	}
+	
+	public double getScalpTradeValue() {
+		return (this.targetMark + this.threshold[0]);
 	}
 	
 	public double convertFromFiat(double fiatValue) {
@@ -98,6 +122,10 @@ public class Currency {
 	
 	public String getID() {
 		return this.ID;
+	}
+	
+	public Type getTag() {
+		return this.tag;
 	}
 
 }
