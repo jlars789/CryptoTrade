@@ -19,3 +19,9 @@ To setup EC2 Instance:
 <li> Edit Path again to: </li>
 <li> C:\User\Administrator\AppData\roaming\Python\Python37\scripts </li>
 </ol>
+
+Investment Types: <br/>
+***ignored:*** This currency is not tracked at all <br/>
+***watched:*** This currency is watched and analyzed; Currency will be included in updates <br/>
+***short_term:*** This currency will be scalp-traded above a certain threshold, then repurchased when deemed a good investment by a machine learning algorithm <br/>
+***long_term:*** This currency will be watched closely; Can be set to sell at a certain percentage profit margin.
