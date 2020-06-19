@@ -138,6 +138,12 @@
 	},
 	
 	{
+		"name": "US Dollar",
+		"code": "USD",
+		"asset_id": "2d8726c4-9929-45b2-8169-315692c04533"
+	},
+	
+	{
 		"name": "Stellar Lumens",
 		"code": "XLM",
 		"asset_id": "beca19db-e9d1-479a-86c4-7f6b6cb3e690"

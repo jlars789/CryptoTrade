@@ -33,6 +33,7 @@ public class Main {
 		LocalDateTime test = LocalDateTime.now();
 		System.out.println("Test time to complete: " + ((float)(Duration.between(startUp, test).toMillis())/1000) + "s");
 		System.out.println("Memory used: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1000000 + "MB");
+		scheduledServiceCreator();
 
 	}
 	
@@ -51,7 +52,6 @@ public class Main {
 		//15 second based operations
 		ScheduledExecutorService quMinuteBasedOperator = Executors.newScheduledThreadPool(1);
 		ScheduledFuture<?> quMinuteScheduler = quMinuteBasedOperator.scheduleAtFixedRate(new CurrencyRefresh(), duration[0], 15000, TimeUnit.MILLISECONDS);
-		System.out.println("Passed");
 		
 		//minute based operations
 		ScheduledExecutorService minuteBasedOperator = Executors.newScheduledThreadPool(1);

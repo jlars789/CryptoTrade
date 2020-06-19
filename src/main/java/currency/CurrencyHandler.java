@@ -126,6 +126,7 @@ public class CurrencyHandler {
 					rate = new BigDecimal(rates.getJSONObject(j).getString("priceUsd"));
 					change = Double.parseDouble(rates.getJSONObject(j).getString("changePercent24Hr"));
 					cannotFind = false;
+					break;
 				}
 			}
 			

@@ -85,6 +85,10 @@ public class Currency {
 	}
 	
 	public double getScalpTrade() {
+		return this.amountOwned - convertFromFiat(this.targetMark);
+	}
+	
+	public double getScalpTradeQuote() {
 		return this.getFiatValue() - this.targetMark;
 	}
 	

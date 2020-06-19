@@ -12,7 +12,6 @@ public class CurrencyRefresh implements Runnable {
 	public void run() {
 		CurrencyHandler.updateValues();
 		CurrencyHandler.updateUserPreferences();
-		
 		CurrencyHandler.analyzeScalp();
 	}
 
