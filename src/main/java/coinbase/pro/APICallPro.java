@@ -33,6 +33,42 @@ public class APICallPro {
 		return par;
 	}
 	
+	public static JSONArray getOrderHistory() {
+		String requestPath = APIUtility.requests.getJSONObject("order-history").getString("requestPath");
+		Request request = APIUtility.buildProGetRequest(requestPath, true);
+		
+		Response res;
+		JSONArray par = null;
+		try {
+			res = APICommunicator.sendRequest(request);
+			String data = res.body().string();
+			par = new JSONArray(data);
+			//System.out.println(data);
+		} catch (IOException e) {
+			e.printStackTrace();
+			ErrorLogger.logException(e);
+		}
+		return par;
+	}
+	
+	public static JSONArray getFullOrderHistory() {
+		String requestPath = APIUtility.requests.getJSONObject("full-order-history").getString("requestPath");
+		Request request = APIUtility.buildProGetRequest(requestPath, true);
+		
+		Response res;
+		JSONArray par = null;
+		try {
+			res = APICommunicator.sendRequest(request);
+			String data = res.body().string();
+			par = new JSONArray(data);
+			//System.out.println(data);
+		} catch (IOException e) {
+			e.printStackTrace();
+			ErrorLogger.logException(e);
+		}
+		return par;
+	}
+	
 	public static void convertUSDtoUSDC(double amount) {
 		convertStable("USD", "USDC", amount);
 	}

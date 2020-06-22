@@ -19,11 +19,11 @@ public class S3Pull {
         String bucketName = "trader-interact";
         String data = "";
         S3Object fullObject = null;
+        System.out.println("Attempting to pull object from " + key);
         try {
             AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
                     .withRegion(clientRegion)
                     .build();
-
             fullObject = s3Client.getObject(new GetObjectRequest(bucketName, key));
             data = getTextInputStream(fullObject.getObjectContent());
             if (fullObject != null) {
@@ -31,6 +31,7 @@ public class S3Pull {
             }
         } catch (SdkClientException | IOException e) {
             e.printStackTrace();
+            System.out.println("Failed to pull object!");
         }
         
         return data;

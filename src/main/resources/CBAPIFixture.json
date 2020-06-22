@@ -53,5 +53,15 @@
 	"trade": {
 		"method": "GET",
 		"requestPath": "/orders"
+	},
+	
+	"order-history": {
+		"method": "GET",
+		"requestPath" : "/fills?limit=50"
+	},
+	
+	"full-order-history": {
+		"method": "GET",
+		"requestPath" : "/orders?status=done&limit=50"
 	}
 }

@@ -16,8 +16,10 @@ import org.json.JSONTokener;
 
 import aws.S3Upload;
 import coinbase.APIUtility;
+import coinbase.pro.APICallPro;
 import currency.CurrencyHandler;
 import threads.CurrencyRefresh;
+import threads.Reporter;
 
 public class Main {
 	//https://github.com/jlars789/CryptoTrade
@@ -38,7 +40,8 @@ public class Main {
 	}
 	
 	private static void testFunction() {
-		
+		//JSONArray a = APICallPro.getTrades();
+		//System.out.println(a.toString(1));
 	}
 	
 	private static void startUp() {
@@ -50,9 +53,13 @@ public class Main {
 		long duration[] = getTimeTo();
 		
 		//15 second based operations
+		//System.out.println(duration[0]);
+		CurrencyRefresh p = new CurrencyRefresh();
 		ScheduledExecutorService quMinuteBasedOperator = Executors.newScheduledThreadPool(1);
-		ScheduledFuture<?> quMinuteScheduler = quMinuteBasedOperator.scheduleAtFixedRate(new CurrencyRefresh(), duration[0], 15000, TimeUnit.MILLISECONDS);
+		ScheduledFuture<?> quMinuteScheduler = quMinuteBasedOperator.scheduleAtFixedRate(p, 0, 15000, TimeUnit.MILLISECONDS);
+		//System.out.println(quMinuteScheduler.getDelay(TimeUnit.MILLISECONDS));
 		
+		/*
 		//minute based operations
 		ScheduledExecutorService minuteBasedOperator = Executors.newScheduledThreadPool(1);
 		ScheduledFuture<?> minuteScheduler = minuteBasedOperator.scheduleAtFixedRate(null, duration[1], 60000, TimeUnit.MILLISECONDS);
@@ -68,14 +75,15 @@ public class Main {
 		//Hour based operations
 		ScheduledExecutorService hourBasedOperator = Executors.newScheduledThreadPool(1);
 		ScheduledFuture<?> hourScheduler = hourBasedOperator.scheduleAtFixedRate(null, duration[4], 3600000, TimeUnit.MILLISECONDS);
-		
+		*/
 		//Daily scheduler
 		ScheduledExecutorService dayBasedOperator = Executors.newScheduledThreadPool(1);
-		ScheduledFuture<?> dayScheduler = dayBasedOperator.scheduleAtFixedRate(null, duration[5], 86400000, TimeUnit.MILLISECONDS);
-		
-		//Daily scheduler
+		ScheduledFuture<?> dayScheduler = dayBasedOperator.scheduleAtFixedRate(new Reporter(), duration[5], 86400000, TimeUnit.MILLISECONDS);
+		/*
+		//Weekly scheduler
 		ScheduledExecutorService weekBasedOperator = Executors.newScheduledThreadPool(1);
 		ScheduledFuture<?> weekScheduler = weekBasedOperator.scheduleAtFixedRate(null, duration[6], 604800000, TimeUnit.MILLISECONDS);
+		*/
 	}
 	
 	public static long[] getTimeTo() {

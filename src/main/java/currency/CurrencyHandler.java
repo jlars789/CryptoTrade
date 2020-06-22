@@ -2,6 +2,11 @@ package currency;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.TextStyle;
+import java.util.ArrayList;
+import java.util.Locale;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -11,12 +16,25 @@ import aws.S3Upload;
 import coinbase.APICallBuilder;
 import coinbase.pro.APICallPro;
 import coinbase.pro.Orders;
+import notifications.email.MessageSender;
 
 public class CurrencyHandler {
+	
+	public static final int IS_USER = 10;
+	public static final double AUTO_SELL = 0.05;
+	
+	public static ArrayList<String> orderIDs = new ArrayList<String>();
 	
 	private static Currency[] currencyArray;
 	public static String[] trades;
 
+	/**
+	 * Instantiates all pertinent currency values not relating to user data </br>
+	 * Pulls data from CurrencyFixture.json to instantiate the name, code, and asset ID </br>
+	 * Pulls data from "products" endpoint on Coinbase Pro to instantiate 24hr change and exchange rate
+	 * 
+	 */
+	
 	public static void initialize() {
 
 		String resourceName = "/CurrencyFixture.json";
@@ -43,25 +61,68 @@ public class CurrencyHandler {
         	String temp = j.getJSONObject(i).getString("base_currency");
         	String trade = j.getJSONObject(i).getString("id");
         	double min = j.getJSONObject(i).getDouble("base_min_size");
-        	getCurrencyByCode(temp).addTrade(trade, min);
+        	String minInc = j.getJSONObject(i).getString("base_increment");
+        	getCurrencyByCode(temp).addTrade(trade, min, minInc);
         }
-        updateValues();
+        updateValues(true);
 	}
+	
+	/**
+	 * Pulls data from an AWS S3 Bucket to evaluate user preferences
+	 */
 	
 	public static void updateUserPreferences() {
 		JSONObject userPref = new JSONObject(S3Pull.readObject("user_pref/user_preferences.json"));
 		for(int i = 0; i < currencyArray.length; i++) {
-			double targetMark = userPref.getJSONObject(currencyArray[i].getCode()).getDouble("initial");
-			double threshold = userPref.getJSONObject(currencyArray[i].getCode()).getDouble("threshold");
-			String tag = userPref.getJSONObject(currencyArray[i].getCode()).getString("type");
-			currencyArray[i].setUserPreferences(targetMark, threshold, tag);
+			//double targetMark = userPref.getJSONObject(currencyArray[i].getCode()).getDouble("initial");
+			//double threshold = userPref.getJSONObject(currencyArray[i].getCode()).getDouble("threshold");
+			if(!currencyArray[i].getCode().equals("USD")) {
+				String tag = userPref.getJSONObject(currencyArray[i].getCode()).getString("type");
+				currencyArray[i].setUserPreferences(0, 0, tag);
+			}
 		}
 	}
 	
-	public static void analyzeScalp() {
+	/**
+	 * Calls the {@code analyzeScalp()} and {@code stopOrderScalp} as part of the default scalp strategy
+	 */
+	
+	public static void scalpStrategy() {
+		analyzeScalp();
+		stopOrderSell();
+	}
+	
+	/**
+	 * Sees if the currency is a margin above the original investment to the point where it can sell
+	 */
+	private static void analyzeScalp() {
 		for(int i = 0; i < currencyArray.length; i++) {
 			if(currencyArray[i].shortTermTrade()) {
-				Orders.marketSellFiat(currencyArray[i].getCode(), currencyArray[i].getScalpTrade());
+				System.out.println("Making scalp trade of " + currencyArray[i].getCode());
+				Orders.marketSellFiat(currencyArray[i].getCode(), currencyArray[i].formatToStandard(currencyArray[i].getScalpTrade()));
+				currencyArray[i].getData().addOrder(currencyArray[i].getScalpTrade());
+			}
+		}
+	}
+	
+	/**
+	 * Evaluates 
+	 */
+	
+	private static void stopOrderSell() {
+		for(int i = 0; i < currencyArray.length; i++) {
+			if(currencyArray[i].stopOrderSell()) {
+				System.out.println("Attempting to sell all of " + currencyArray[i].getCode());
+				double originalValue = currencyArray[i].getFiatValue();
+				Orders.marketSellFiat(currencyArray[i].getCode(), currencyArray[i].formatToStandard(currencyArray[i].getFiatValue()-.1));
+				LocalDateTime time = LocalDateTime.now();
+				String message = "On " + time.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH) + ", " + time.getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH) + 
+						" " + time.getDayOfMonth() + ", all of your " + currencyArray[i].getName() + " was sold as it went below the desired threshold. It was worth $" + 
+						originalValue + " at the time of sale";
+				
+				MessageSender.deliverMessage("Alert: All " + currencyArray[i].getCode() + " was sold!" , message);
+				
+				currencyArray[i].getData().soldAll(originalValue);
 			}
 		}
 	}
@@ -69,10 +130,8 @@ public class CurrencyHandler {
 	public static Currency[] sortByScalpEff() {
 		int n = currencyArray.length; 
 		  
-        // One by one move boundary of unsorted subarray 
         for (int i = 0; i < n-1; i++) 
         { 
-            // Find the minimum element in unsorted array 
             int min_idx = i; 
             for (int j = i+1; j < n; j++) { 
             	double com0 = currencyArray[j].getExchangeRate() * currencyArray[j].getMinTradeValue();
@@ -81,8 +140,6 @@ public class CurrencyHandler {
                     min_idx = j; 
             }
   
-            // Swap the found minimum element with the first 
-            // element 
             Currency temp = currencyArray[min_idx]; 
             currencyArray[min_idx] = currencyArray[i]; 
             currencyArray[i] = temp; 
@@ -112,7 +169,7 @@ public class CurrencyHandler {
 		return ID;
 	}
 	
-	public static void updateValues() {
+	public static void updateValues(boolean init) {
 		JSONArray rates = APICallBuilder.getMassExchangeRate();
 		JSONArray acctData = APICallPro.getAccountData();
 		
@@ -130,7 +187,11 @@ public class CurrencyHandler {
 				}
 			}
 			
-			if(cannotFind) System.out.println("Cannot find " + currencyArray[i].getCode());
+			if(cannotFind) {
+				//System.out.println("Cannot find " + currencyArray[i].getCode());
+				rate = new BigDecimal("1.0");
+				change = 0.0;
+			}
 			
 			double amount = 0;
 			
@@ -143,10 +204,52 @@ public class CurrencyHandler {
 				}
 			}
 			
-			currencyArray[i].dataUpdate(rate.doubleValue(), amount, change);
+			if(init) currencyArray[i].dataInit(rate.doubleValue(), amount, change);
+			else {
+				currencyArray[i].dataUpdate(rate.doubleValue(), amount, change);
+			}
 		}
 		S3Upload.uploadString(acctData.toString(1), "ids/pro-wallet-data.json");
         
+	}
+	
+	public static void checkUserPurchases() {
+		JSONArray orders = APICallPro.getFullOrderHistory();
+		
+		for(int i = 0; i < orders.length(); i++) {
+			JSONObject t = orders.getJSONObject(i);
+			boolean counted = false;
+			for(int j = 0; j < orderIDs.size(); j++) {
+				if(orderIDs.get(j).equals(t.getString("id"))) counted = true;
+			}
+			if(!counted) {
+				addID(t.getString("id"));
+				if(t.getString("side").equals("buy") && t.getString("done_reason").equals("filled") && Double.parseDouble(t.getString("executed_value")) >= IS_USER){
+					
+					String productID = t.getString("product_id").replace("-USD", "");
+					double value = t.getDouble("executed_value");
+					getCurrencyByCode(productID).updateInitial(value);
+				}
+			}
+		}
+	}
+	
+	public static String getDailyMessages(){
+		String str = "";
+		for(int i = 0; i < currencyArray.length; i++) {
+			if(currencyArray[i].addOnReport()) {
+				str += currencyArray[i].messageToAdd();
+				str += "\n";
+			}
+		}
+		return str;
+	}
+	
+	private static void addID(String id) {
+		if(orderIDs.size() > 30) {
+			orderIDs.remove(0);
+		}
+		orderIDs.add(id);
 	}
 
 }
