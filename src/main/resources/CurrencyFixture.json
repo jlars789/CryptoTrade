@@ -30,6 +30,12 @@
 	},
 	
 	{
+		"name": "Compound",
+		"code": "COMP",
+		"asset_id": "null"
+	},
+	
+	{
 		"name": "Civic",
 		"code": "CVC",
 		"asset_id": "2b3cc483-7c88-4d32-b892-8926dcefa682"

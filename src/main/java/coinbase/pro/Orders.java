@@ -1,6 +1,7 @@
 package coinbase.pro;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 
 import org.json.JSONObject;
 
@@ -25,7 +26,7 @@ public class Orders {
 		else {
 			amount = c.convertFromFiat(amount);
 		}
-		System.out.println("Attempting to sell " +code + " for " + amount + " " + code);
+		System.out.println("Attempting to sell " + code + " for " + amount + " " + code);
 		String tradeID = getOptimalSell(code);
 		if(tradeID.contains("USDC")) {
 			return limitSellFiat(tradeID, amount);
@@ -57,9 +58,11 @@ public class Orders {
 	private static JSONObject limitSellFiat(String tradeID, double amount) {
 		String requestPath = APIUtility.requests.getJSONObject("trade").getString("requestPath");
 		String code = tradeID.split("-")[0];
+		DecimalFormat df = new DecimalFormat("###0.######");
+		double price = Double.parseDouble(df.format(CurrencyHandler.getCurrencyByCode(code).getExchangeRate()));
 		JSONObject body = new JSONObject();
 		body.put("type", "limit");
-		body.put("price", CurrencyHandler.getCurrencyByCode(code));
+		body.put("price", price);
 		body.put("size", amount);
 		body.put("side", "sell");
 		body.put("product_id", tradeID);

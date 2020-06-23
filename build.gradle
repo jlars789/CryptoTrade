@@ -9,10 +9,14 @@
 plugins {
     // Apply the java-library plugin to add support for Java Library
     id 'java-library'
+    id "nebula.lint" version "16.9.0"
 }
 
 apply plugin: 'java'
 apply plugin: 'application'
+apply plugin: "nebula.lint"
+
+gradleLint.rules = ['all-dependency']
 
 mainClassName = 'Main'
 sourceCompatibility = 1.8
@@ -48,7 +52,7 @@ dependencies {
     implementation 'com.github.coinbase:coinbase-java:v1.10.0'
     
     compile group: 'commons-codec', name: 'commons-codec', version: '1.14'
-	compile group: 'com.amazonaws', name: 'aws-java-sdk', version: '1.11.801'
+	compile group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.11.801'
 	
 	compile group: 'org.apache.commons', name: 'commons-math3', version: '3.0'
 	

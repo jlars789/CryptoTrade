@@ -2,6 +2,7 @@ package currency;
 
 public class CurrencyData {
 	
+	//Fiat value
 	private double initialInvestment;
 	
 	private double[] extrema = new double[2];
@@ -30,8 +31,14 @@ public class CurrencyData {
 		return this.initialInvestment;
 	}
 	
-	public void addOrder(double tr) {
-		this.toUSD += tr;
+	/*
+	public double getInitialFiat() {
+		return this.initialInvestment * this.initialExchangeRate;
+	}
+	*/
+	
+	public void addOrder(double trade) {
+		this.toUSD += trade;
 	}
 	
 	public void soldAll(double fin) {

@@ -158,7 +158,7 @@ public class APIUtility {
 	}
 	
 	public static Request buildCoinCapRequest(String requestPath) {
-		String url = "http://" +COINCAP_URL + requestPath + "?limit=250";
+		String url = "http://" +COINCAP_URL + requestPath + "?limit=400";
 		System.out.println("Attempting to GET data from " + url);
 		Request request = new Request.Builder()
 				.addHeader("Accept-Encoding", "deflate")

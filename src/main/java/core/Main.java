@@ -4,6 +4,7 @@ package core;
 import java.io.InputStream;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -40,7 +41,7 @@ public class Main {
 	}
 	
 	private static void testFunction() {
-		//JSONArray a = APICallPro.getTrades();
+		//JSONArray a = APICallPro.getAccountData();
 		//System.out.println(a.toString(1));
 	}
 	

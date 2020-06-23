@@ -20,9 +20,12 @@ public class CurrencyRefresh implements Runnable {
 			Thread.sleep(15);
 			CurrencyHandler.updateUserPreferences();
 			Thread.sleep(15);
+			System.out.println("User preferences updated");
 			CurrencyHandler.checkUserPurchases();
 			Thread.sleep(15);
+			System.out.println("User preferences checked");
 			CurrencyHandler.scalpStrategy();
+			System.out.println("Scalp strategy checked");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

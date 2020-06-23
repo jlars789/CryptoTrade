@@ -37,8 +37,8 @@ public class Currency {
 		
 	}
 	
-	public void dataInit(double exchangeRate, double initialOwned, double percentChangeDay) {
-		dataUpdate(exchangeRate, initialOwned, percentChangeDay);
+	public void dataInit(double exchangeRate, double amountOwned, double initialOwned, double percentChangeDay) {
+		dataUpdate(exchangeRate, amountOwned, percentChangeDay);
 		setCurrencyData(initialOwned);
 	}
 	
@@ -76,13 +76,14 @@ public class Currency {
 	public boolean shortTermTrade() {
 		if(!(this.code.equals("USD") || this.code.equals("USDC"))) {
 			boolean t = ((this.tag.equals(Type.SHORT_TERM)) && (this.getFiatValue() > this.getScalpTradeValue()));
+			//System.out.println("Fiat: " + this.getFiatValue() + ", scalp: " + this.getScalpTradeValue());
 			return t;
 		} else return false;
 	}
 	
 	public boolean stopOrderSell() {
 		if(!(this.code.equals("USD") || this.code.equals("USDC"))) {
-			return ((this.tag.equals(Type.SHORT_TERM)) && (this.getFiatValue() < ((this.data.getInitial() * this.getExchangeRate()) * (1-CurrencyHandler.AUTO_SELL))));
+			return ((this.tag.equals(Type.SHORT_TERM)) && (this.getFiatValue() < ((this.data.getInitial() * (1-CurrencyHandler.AUTO_SELL)))));
 		} else return false;
 	}
 	
@@ -113,9 +114,18 @@ public class Currency {
 		return this.data;
 	}
 	
+	public double getInitial() {
+		return this.data.getInitial();
+	}
+	
 	public void updateInitial(double change) {
 		data.setInitialInvest(this.amountOwned, change);
 	}
+	/*
+	public double initialFiat() {
+		return data.getInitialFiat();
+	}
+	*/
 	
 	public boolean addOnReport() {
 		return this.data.getConverted() > 0;
@@ -137,6 +147,7 @@ public class Currency {
 	}
 	
 	public double getScalpTrade() {
+		System.out.println(code + ": " + this.amountOwned + " - " + convertFromFiat(this.data.getInitial()));
 		return this.amountOwned - convertFromFiat(this.data.getInitial());
 	}
 	
@@ -155,7 +166,7 @@ public class Currency {
 	}
 	
 	public double getScalpTradeValue() {
-		return ((this.data.getInitial() * this.exchangeRate)  + (this.minTradeValue * this.exchangeRate));
+		return ((this.data.getInitial())  + (this.minTradeValue * this.exchangeRate));
 	}
 	
 	public double convertFromFiat(double fiatValue) {

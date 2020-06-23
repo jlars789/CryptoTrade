@@ -2,7 +2,9 @@ package currency;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -20,13 +22,16 @@ import notifications.email.MessageSender;
 
 public class CurrencyHandler {
 	
-	public static final int IS_USER = 10;
+	public static final int IS_USER_BUY = 1;
+	public static final int PERM_SELL = 10;
 	public static final double AUTO_SELL = 0.05;
 	
 	public static ArrayList<String> orderIDs = new ArrayList<String>();
 	
 	private static Currency[] currencyArray;
 	public static String[] trades;
+	
+	public static LocalDateTime initTime;
 
 	/**
 	 * Instantiates all pertinent currency values not relating to user data </br>
@@ -37,6 +42,8 @@ public class CurrencyHandler {
 	
 	public static void initialize() {
 
+		initTime = LocalDateTime.now(ZoneOffset.UTC);
+		
 		String resourceName = "/CurrencyFixture.json";
         InputStream is = CurrencyHandler.class.getResourceAsStream(resourceName);
         if (is == null) {
@@ -97,9 +104,13 @@ public class CurrencyHandler {
 	 */
 	private static void analyzeScalp() {
 		for(int i = 0; i < currencyArray.length; i++) {
+			if(currencyArray[i].getFiatValue() > 0) {
+				System.out.println(currencyArray[i].getCode() + ": " + currencyArray[i].getFiatValue() + ", Initial " + currencyArray[i].getInitial());
+			}
 			if(currencyArray[i].shortTermTrade()) {
 				System.out.println("Making scalp trade of " + currencyArray[i].getCode());
-				Orders.marketSellFiat(currencyArray[i].getCode(), currencyArray[i].formatToStandard(currencyArray[i].getScalpTrade()));
+				//System.out.println(currencyArray[i].formatToStandard(currencyArray[i].getScalpTrade()));
+				Orders.marketSellFiat(currencyArray[i].getCode(), currencyArray[i].getExchangeRate() * currencyArray[i].formatToStandard(currencyArray[i].getScalpTrade()));
 				currencyArray[i].getData().addOrder(currencyArray[i].getScalpTrade());
 			}
 		}
@@ -161,6 +172,7 @@ public class CurrencyHandler {
 	
 	public static String findCurrencyID(String code) {
 		String ID = "Invalid code";
+		
 		for(int i = 0; i < currencyArray.length; i++) {
 			if(currencyArray[i].getCode().equals(code)) {
 				ID = currencyArray[i].getID();
@@ -172,6 +184,8 @@ public class CurrencyHandler {
 	public static void updateValues(boolean init) {
 		JSONArray rates = APICallBuilder.getMassExchangeRate();
 		JSONArray acctData = APICallPro.getAccountData();
+		String data = S3Pull.readObject("user_pref/initial_invest.json");
+		JSONObject obj = new JSONObject(data);
 		
 		for(int i = 0; i < currencyArray.length; i++) {
 			String id = currencyArray[i].getCode();
@@ -196,7 +210,7 @@ public class CurrencyHandler {
 			double amount = 0;
 			
 			for(int j = 0; j < acctData.length(); j++) {
-				double bal = acctData.getJSONObject(j).getDouble("balance");
+				double bal = acctData.getJSONObject(j).getDouble("available");
 				if(acctData.getJSONObject(j).getString("currency").equals(id)) {
 					acctData.getJSONObject(j).getString("id");
 					amount = bal;
@@ -204,9 +218,13 @@ public class CurrencyHandler {
 				}
 			}
 			
-			if(init) currencyArray[i].dataInit(rate.doubleValue(), amount, change);
+			
+			double initial = obj.getJSONObject(currencyArray[i].getCode()).getDouble("initial");
+			
+			if(init) currencyArray[i].dataInit(rate.doubleValue(), amount, initial, change);
 			else {
 				currencyArray[i].dataUpdate(rate.doubleValue(), amount, change);
+				
 			}
 		}
 		S3Upload.uploadString(acctData.toString(1), "ids/pro-wallet-data.json");
@@ -215,22 +233,58 @@ public class CurrencyHandler {
 	
 	public static void checkUserPurchases() {
 		JSONArray orders = APICallPro.getFullOrderHistory();
+		String data = S3Pull.readObject("user_pref/initial_invest.json");
+		JSONObject obj = new JSONObject(data);
+		boolean modification = false;
 		
 		for(int i = 0; i < orders.length(); i++) {
 			JSONObject t = orders.getJSONObject(i);
 			boolean counted = false;
+			
 			for(int j = 0; j < orderIDs.size(); j++) {
 				if(orderIDs.get(j).equals(t.getString("id"))) counted = true;
 			}
 			if(!counted) {
 				addID(t.getString("id"));
-				if(t.getString("side").equals("buy") && t.getString("done_reason").equals("filled") && Double.parseDouble(t.getString("executed_value")) >= IS_USER){
-					
-					String productID = t.getString("product_id").replace("-USD", "");
-					double value = t.getDouble("executed_value");
-					getCurrencyByCode(productID).updateInitial(value);
+				String time = orders.getJSONObject(i).getString("created_at");
+				time = time.replace("Z", "");
+				LocalDateTime now = LocalDateTime.parse(time);
+				long dur = Duration.between(initTime, now).toMillis();
+				if(dur > 0) {
+					if(t.getString("side").equals("buy") && t.getString("done_reason").equals("filled") && (Double.parseDouble(t.getString("executed_value")) >= IS_USER_BUY)){
+						String productID = t.getString("product_id");
+						if(productID.contains("USDC")) {
+							productID = productID.replace("-USDC", "");
+						} else {
+							productID = productID.replace("-USD", "");
+						}
+						
+						double value = t.getDouble("executed_value");
+						getCurrencyByCode(productID).updateInitial(value);
+						double ini = obj.getJSONObject(productID).getDouble("initial");
+						obj.getJSONObject(productID).put("initial", ini+value);
+						modification = true;
+					}
+					else if(t.getString("side").equals("sell") && t.getString("done_reason").equals("filled") && (Double.parseDouble(t.getString("executed_value")) >= PERM_SELL)){
+						String productID = t.getString("product_id");
+						if(productID.contains("USDC")) {
+							productID = productID.replace("-USDC", "");
+						} else {
+							productID = productID.replace("-USD", "");
+						}
+						
+						double value = t.getDouble("executed_value");
+						getCurrencyByCode(productID).updateInitial(value);
+						double ini = obj.getJSONObject(productID).getDouble("initial");
+						obj.getJSONObject(productID).put("initial", ini+value);
+						modification = true;
+					}
 				}
+				
 			}
+		}
+		if(modification) {
+			S3Upload.uploadString(obj.toString(1), "user_pref/initial-invest.json");
 		}
 	}
 	
