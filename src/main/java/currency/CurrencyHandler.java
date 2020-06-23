@@ -25,6 +25,9 @@ public class CurrencyHandler {
 	public static final int IS_USER_BUY = 1;
 	public static final int PERM_SELL = 10;
 	public static final double AUTO_SELL = 0.05;
+	public static final int COUNTER_MAX = 480;
+	
+	public static int counter = 0;
 	
 	public static ArrayList<String> orderIDs = new ArrayList<String>();
 	
@@ -184,8 +187,7 @@ public class CurrencyHandler {
 	public static void updateValues(boolean init) {
 		JSONArray rates = APICallBuilder.getMassExchangeRate();
 		JSONArray acctData = APICallPro.getAccountData();
-		String data = S3Pull.readObject("user_pref/initial_invest.json");
-		JSONObject obj = new JSONObject(data);
+		
 		
 		for(int i = 0; i < currencyArray.length; i++) {
 			String id = currencyArray[i].getCode();
@@ -219,23 +221,33 @@ public class CurrencyHandler {
 			}
 			
 			
-			double initial = obj.getJSONObject(currencyArray[i].getCode()).getDouble("initial");
 			
-			if(init) currencyArray[i].dataInit(rate.doubleValue(), amount, initial, change);
+			
+			if(init) {
+				String data = S3Pull.readObject("user_pref/initial_invest.json");
+				JSONObject obj = new JSONObject(data);
+				double initial = obj.getJSONObject(currencyArray[i].getCode()).getDouble("initial");
+				currencyArray[i].dataInit(rate.doubleValue(), amount, initial, change);
+			}
 			else {
 				currencyArray[i].dataUpdate(rate.doubleValue(), amount, change);
 				
 			}
 		}
-		S3Upload.uploadString(acctData.toString(1), "ids/pro-wallet-data.json");
+		counter++;
+		if(counter >= COUNTER_MAX) {
+			S3Upload.uploadString(acctData.toString(1), "ids/pro-wallet-data.json");
+			counter = 0;
+		}
         
 	}
 	
 	public static void checkUserPurchases() {
 		JSONArray orders = APICallPro.getFullOrderHistory();
-		String data = S3Pull.readObject("user_pref/initial_invest.json");
-		JSONObject obj = new JSONObject(data);
+		
 		boolean modification = false;
+		boolean called = false;
+		JSONObject obj = null;
 		
 		for(int i = 0; i < orders.length(); i++) {
 			JSONObject t = orders.getJSONObject(i);
@@ -251,6 +263,11 @@ public class CurrencyHandler {
 				LocalDateTime now = LocalDateTime.parse(time);
 				long dur = Duration.between(initTime, now).toMillis();
 				if(dur > 0) {
+					if(!called) {
+						String data = S3Pull.readObject("user_pref/initial_invest.json");
+						obj = new JSONObject(data);
+						called = true;
+					}
 					if(t.getString("side").equals("buy") && t.getString("done_reason").equals("filled") && (Double.parseDouble(t.getString("executed_value")) >= IS_USER_BUY)){
 						String productID = t.getString("product_id");
 						if(productID.contains("USDC")) {
