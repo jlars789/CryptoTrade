@@ -16,16 +16,13 @@ public class CurrencyRefresh implements Runnable {
 	public void run() {
 		LocalDateTime start = LocalDateTime.now();
 		try {
+			CurrencyHandler.checkUserPurchases();
+			Thread.sleep(15);
 			CurrencyHandler.updateValues(false);
 			Thread.sleep(15);
 			CurrencyHandler.updateUserPreferences();
 			Thread.sleep(15);
-			System.out.println("User preferences updated");
-			CurrencyHandler.checkUserPurchases();
-			Thread.sleep(15);
-			System.out.println("User preferences checked");
 			CurrencyHandler.scalpStrategy();
-			System.out.println("Scalp strategy checked");
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

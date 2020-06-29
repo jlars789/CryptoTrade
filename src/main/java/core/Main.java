@@ -2,6 +2,12 @@ package core;
 
 
 import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -32,7 +38,7 @@ public class Main {
 		LocalDateTime startUp = LocalDateTime.now();
 		System.out.println("Setup time to complete: " + ((float)(Duration.between(init, startUp).toMillis())/1000) + "s");
 		
-		testFunction();
+		//testFunction();
 		LocalDateTime test = LocalDateTime.now();
 		System.out.println("Test time to complete: " + ((float)(Duration.between(startUp, test).toMillis())/1000) + "s");
 		System.out.println("Memory used: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1000000 + "MB");
@@ -41,8 +47,32 @@ public class Main {
 	}
 	
 	private static void testFunction() {
-		//JSONArray a = APICallPro.getAccountData();
-		//System.out.println(a.toString(1));
+		Connection dbConn = getRemoteConnection();
+		if(dbConn == null) return;
+		//String query = "SELECT * from Hourly WHERE time > " + shaveToYesterday();
+		String query  = "SELECT * from Hourly";
+		PreparedStatement pst;
+		try {
+			pst = dbConn.prepareStatement(query, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			ResultSet rs = pst.executeQuery();
+			ResultSetMetaData rsmd = rs.getMetaData();
+			rs.afterLast();
+			rs.previous();
+			for(int i = 0; i < 10; i++) {
+				int offset = 0;
+				for(int j = 0; j < CurrencyHandler.getCurrencySize()-1; j++) {
+					System.out.print(rsmd.getColumnLabel(j+2) + " " + rs.getDouble(j+2));
+					if(CurrencyHandler.getCodeByIndex(j).equals("COMP")) offset++;
+					System.out.println(", " + CurrencyHandler.getCodeByIndex(j+offset));
+				}
+				System.out.println("");
+				rs.previous();
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 	
 	private static void startUp() {
@@ -120,4 +150,26 @@ public class Main {
 	    
 	    return duration;
 	}
+	
+	public static Connection getRemoteConnection() {
+		try {
+	      Class.forName("com.mysql.cj.jdbc.Driver");
+	      String dbName = "crypto";
+	      String userName = System.getenv("RDS_USER");
+	      String password = System.getenv("RDS_PASSWORD");
+	      String hostname = System.getenv("RDS_HOSTNAME");
+	      String port = "3306";
+	      String jdbcUrl = "jdbc:mysql://" + hostname + ":" + port + "/" + dbName + "?user=" + userName + "&password=" + password;
+	      System.out.println("Attempting to connect to MySQL Database...");
+	      Connection con = DriverManager.getConnection(jdbcUrl);
+	      return con;
+	    } catch (ClassNotFoundException e) { 
+	    	e.printStackTrace();
+	    }
+	    catch (SQLException e) { 
+	    	e.printStackTrace();
+	    }
+	    return null;
+	}
+	    
 }

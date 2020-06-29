@@ -1,5 +1,6 @@
 package currency;
 
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
@@ -100,6 +101,7 @@ public class Currency {
 		}
 		
 		this.df = new DecimalFormat(reg);
+		this.df.setRoundingMode(RoundingMode.DOWN);
 	}
 	
 	public double formatToStandard(double val) {
@@ -119,7 +121,8 @@ public class Currency {
 	}
 	
 	public void updateInitial(double change) {
-		data.setInitialInvest(this.amountOwned, change);
+		System.out.println(this.code + " " + change);
+		data.setInitialInvest(this.getFiatValue(), change);
 	}
 	/*
 	public double initialFiat() {
@@ -172,6 +175,10 @@ public class Currency {
 	public double convertFromFiat(double fiatValue) {
 		 return Double.parseDouble(df.format(fiatValue/this.exchangeRate));
 	}
+	
+	/**
+	 * @return The minimum trade value in the native currency
+	 */
 	
 	public double getMinTradeValue() {
 		return Double.parseDouble(df.format(minTradeValue));

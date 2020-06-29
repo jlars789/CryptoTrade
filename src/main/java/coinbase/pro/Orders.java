@@ -55,6 +55,10 @@ public class Orders {
 		
 	}
 	
+	public static JSONObject cleanCurrency(String code, double amount) {
+		return limitSellFiat(getOptimalSell(code), amount);
+	}
+	
 	private static JSONObject limitSellFiat(String tradeID, double amount) {
 		String requestPath = APIUtility.requests.getJSONObject("trade").getString("requestPath");
 		String code = tradeID.split("-")[0];

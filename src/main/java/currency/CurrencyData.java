@@ -5,9 +5,10 @@ public class CurrencyData {
 	//Fiat value
 	private double initialInvestment;
 	
-	private double[] extrema = new double[2];
-	private double average;
 	private double toUSD;
+	
+	private double EMA;
+	private double RMI;
 
 	public CurrencyData(double initialOwned) {
 		this.initialInvestment = initialOwned;
@@ -15,16 +16,6 @@ public class CurrencyData {
 	
 	public void setInitialInvest(double initial, double change) {
 		this.initialInvestment = initial + change;
-	}
-	
-	public void setExtrema(double high, double low) {
-		this.extrema[0] = high;
-		this.extrema[1] = low;
-	}
-	
-	public void setAverage(double open, double close) {
-		double sum = open+close;
-		this.average = sum/2;
 	}
 	
 	public double getInitial() {
@@ -52,11 +43,6 @@ public class CurrencyData {
 	
 	public void reset() {
 		this.toUSD = 0;
-	}
-	
-	public double getEccentricity() {
-		double numerator = extrema[0] - extrema[1];
-		return numerator/average;
 	}
 
 }
