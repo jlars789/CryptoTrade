@@ -5,8 +5,8 @@ import java.text.DecimalFormat;
 
 import org.json.JSONObject;
 
-import coinbase.APICommunicator;
-import coinbase.APIUtility;
+import api.APICommunicator;
+import api.APIUtility;
 import currency.Currency;
 import currency.CurrencyHandler;
 import okhttp3.Request;
@@ -16,6 +16,8 @@ import tracker.Transaction;
 
 public class Orders {
 	
+	private static final String[] LIMIT_ONLY = {"GNT", "MANA", "LOOM", "CVC", "DNT"};
+	/*
 	public static JSONObject marketSellFiat(String code, double amount) {
 		String requestPath = APIUtility.requests.getJSONObject("trade").getString("requestPath");
 		Currency c = CurrencyHandler.getCurrencyByCode(code);
@@ -28,7 +30,14 @@ public class Orders {
 		}
 		System.out.println("Attempting to sell " + code + " for " + amount + " " + code);
 		String tradeID = getOptimalSell(code);
-		if(tradeID.contains("USDC")) {
+		boolean limitOnly = false;
+		for(int i = 0; i < LIMIT_ONLY.length; i++) {
+			if(code.equals(LIMIT_ONLY[i])) { 
+				limitOnly = true;
+				break;
+			}
+		}
+		if(limitOnly) {
 			return limitSellFiat(tradeID, amount);
 		}
 		JSONObject body = new JSONObject();
@@ -55,9 +64,11 @@ public class Orders {
 		
 	}
 	
+	
 	public static JSONObject cleanCurrency(String code, double amount) {
 		return limitSellFiat(getOptimalSell(code), amount);
 	}
+	*/
 	
 	private static JSONObject limitSellFiat(String tradeID, double amount) {
 		String requestPath = APIUtility.requests.getJSONObject("trade").getString("requestPath");
@@ -89,7 +100,7 @@ public class Orders {
 		System.out.println("Put Limit Order Up for " + code + " for $" + amount);
 		return obj;
 	}
-	
+	/*
 	public static JSONObject marketBuyFiat(String code, double amount) {
 		String requestPath = APIUtility.requests.getJSONObject("trade").getString("requestPath");
 		Currency c = CurrencyHandler.getCurrencyByCode(code);
@@ -128,5 +139,6 @@ public class Orders {
 		else tr="BTC";
 		return code + "-" + tr;
 	}
+	*/
 
 }

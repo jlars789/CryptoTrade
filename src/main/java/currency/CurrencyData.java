@@ -7,8 +7,6 @@ public class CurrencyData {
 	
 	private double toUSD;
 	
-	private double EMA;
-	private double RMI;
 
 	public CurrencyData(double initialOwned) {
 		this.initialInvestment = initialOwned;

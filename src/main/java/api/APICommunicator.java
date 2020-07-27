@@ -1,4 +1,4 @@
-package coinbase;
+package api;
 
 import java.io.IOException;
 

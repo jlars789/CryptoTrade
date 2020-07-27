@@ -1,24 +1,41 @@
 package currency;
 
+import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.format.TextStyle;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Locale;
+import java.util.Properties;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.knowm.xchange.Exchange;
+import org.knowm.xchange.ExchangeFactory;
+import org.knowm.xchange.ExchangeSpecification;
+import org.knowm.xchange.binance.BinanceExchange;
+import org.ta4j.core.BarSeries;
+import org.ta4j.core.BaseStrategy;
+import org.ta4j.core.Rule;
+import org.ta4j.core.Strategy;
+import org.ta4j.core.indicators.EMAIndicator;
+import org.ta4j.core.indicators.MACDIndicator;
+import org.ta4j.core.indicators.RSIIndicator;
+import org.ta4j.core.indicators.StochasticOscillatorKIndicator;
+import org.ta4j.core.indicators.bollinger.BollingerBandsLowerIndicator;
+import org.ta4j.core.indicators.bollinger.BollingerBandsMiddleIndicator;
+import org.ta4j.core.indicators.bollinger.BollingerBandsUpperIndicator;
+import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
+import org.ta4j.core.num.PrecisionNum;
+import org.ta4j.core.trading.rules.*;
 
+import api.CoinCapAPI;
 import aws.S3Pull;
-import aws.S3Upload;
-import coinbase.APICallBuilder;
-import coinbase.pro.APICallPro;
-import coinbase.pro.Orders;
-import notifications.email.MessageSender;
+import rule.StopAfterHigh;
 
 public class CurrencyHandler {
 	
@@ -27,15 +44,19 @@ public class CurrencyHandler {
 	public static final double AUTO_SELL = 0.025;
 	public static final int COUNTER_MAX = 480;
 	
-	public static int counter = 0;
+	private static int counter = 0;
 	
 	public static ArrayList<String> orderIDs = new ArrayList<String>();
 	
-	private static Currency[] currencyArray;
+	protected static Currency[] currencyArray;
 	public static String[] trades;
+	
+	private static ArrayList<String> excluded = new ArrayList<String>();
 	
 	public static LocalDateTime initTime;
 	public static LocalDateTime orderCheckStamp;
+	
+	public static Exchange bitstamp;
 
 	/**
 	 * Instantiates all pertinent currency values not relating to user data </br>
@@ -44,7 +65,7 @@ public class CurrencyHandler {
 	 * 
 	 */
 	
-	public static void initialize() {
+	public static void initialize(int size) {
 
 		initTime = LocalDateTime.now(ZoneOffset.UTC);
 		orderCheckStamp = LocalDateTime.now(ZoneOffset.UTC);
@@ -63,26 +84,106 @@ public class CurrencyHandler {
         for(int i = 0; i < array.length(); i++) {
         	String name = array.getJSONObject(i).getString("name");
         	String code = array.getJSONObject(i).getString("code");
-        	String id = array.getJSONObject(i).getString("asset_id");
-        	currencyArray[i] = new Currency(name, code, id);
+        	currencyArray[i] = new Currency(name, code);
         }
         
-        JSONArray j = APICallPro.getTrades();
+   
         
-        for(int i = 0; i < j.length(); i++) {
-        	String temp = j.getJSONObject(i).getString("base_currency");
-        	String trade = j.getJSONObject(i).getString("id");
-        	double min = j.getJSONObject(i).getDouble("base_min_size");
-        	String minInc = j.getJSONObject(i).getString("base_increment");
-        	getCurrencyByCode(temp).addTrade(trade, min, minInc);
+        initCurrencies(size);
+        
+        Properties prop = new Properties();
+        String fileName = "/properties/auth.properties";
+        InputStream is1 = CurrencyHandler.class.getResourceAsStream(fileName);
+        
+        try {
+            prop.load(is1);
+        } catch (IOException ex) {
+           ex.printStackTrace();
         }
-        updateValues(true);
+        
+        ExchangeSpecification exSpec = new ExchangeSpecification(BinanceExchange.class.getName());
+        exSpec.setApiKey(prop.getProperty("binance.apikey"));
+        exSpec.setSecretKey(prop.getProperty("binance.secretkey"));
+        bitstamp = ExchangeFactory.INSTANCE.createExchange(exSpec);
+        
+        
+	}
+	
+	public static Strategy buildStrategy(BarSeries bs, String currency) {
+		ClosePriceIndicator closePrice = new ClosePriceIndicator(bs);
+		
+		
+		EMAIndicator shortEma = new EMAIndicator(closePrice, 9);
+	    EMAIndicator longEma = new EMAIndicator(closePrice, 26);
+
+	    StochasticOscillatorKIndicator stochasticOscillK = new StochasticOscillatorKIndicator(bs, 14);
+
+	    MACDIndicator macd = new MACDIndicator(closePrice, 12, 26);
+	    EMAIndicator emaMacd = new EMAIndicator(macd, 9);
+	    
+	    EMAIndicator avg14 = new EMAIndicator(closePrice, 10);
+        StandardDeviationIndicator sd14 = new StandardDeviationIndicator(closePrice, 10);
+
+        // Bollinger bands
+        BollingerBandsMiddleIndicator middleBBand = new BollingerBandsMiddleIndicator(avg14);
+        BollingerBandsLowerIndicator lowBBand = new BollingerBandsLowerIndicator(middleBBand, sd14);
+        BollingerBandsUpperIndicator upBBand = new BollingerBandsUpperIndicator(middleBBand, sd14);
+        
+        /*
+        Rule entryRule = new UnderIndicatorRule(closePrice, lowBBand)
+        		.and(new UnderIndicatorRule(new RSIIndicator(closePrice, 10), 30))
+        		.and(new OverIndicatorRule(macd, emaMacd));
+        //Rule entryRule1 = new 
+	    Rule exitRule = new StopLossRule(closePrice, PrecisionNum.valueOf("5"));
+	    
+	    Rule indicExit = new UnderIndicatorRule(macd, emaMacd)
+		.and(new OverIndicatorRule(new RSIIndicator(closePrice, 10), 60));
+	    exitRule = exitRule.or(indicExit);
+	    /*
+	    Rule indicExit = new CrossedUpIndicatorRule(closePrice, upBBand)
+	    		.and(new OverIndicatorRule(new RSIIndicator(closePrice, 10), 70));
+	    		*/
+	    
+	    
+	    		
+	   Rule entryRule = new CrossedDownIndicatorRule(new RSIIndicator(closePrice, 25), 30);
+	   //Rule exitRule = new CrossedUpIndicatorRule(new RSIIndicator(closePrice, 25), 70);
+	   Rule exitRule = new StopAfterHigh(closePrice, PrecisionNum.valueOf("15"), currency)
+			   .or(new CrossedUpIndicatorRule(new RSIIndicator(closePrice, 25), 70));
+	   /*
+	   Rule exitRule = new CrossedUpIndicatorRule(new RSIIndicator(closePrice, 25), 70)
+			   .or(new StopLossRule(closePrice, PrecisionNum.valueOf("2")));
+			   //.or(new TrailingStopLossRule(closePrice, PrecisionNum.valueOf("12.5"), 20));
+	   //exitRule = exitRule.or(new TrailingStopLossRule(closePrice, PrecisionNum.valueOf("12.5"), 20));
+	  // exitRule = exitRule.or(new StopLossRule(closePrice, PrecisionNum.valueOf("10")));
+	    
+	    
+	    //new TrailingStopLossRule(closePrice, PrecisionNum.valueOf("20"))
+		//.or
+	    /*
+		Rule entryRule = new CrossedUpIndicatorRule(macd, emaMacd)
+				.and(new UnderIndicatorRule(new RSIIndicator(closePrice, 14), 40));
+		Rule exitRule = new TrailingStopLossRule(closePrice, PrecisionNum.valueOf("10"))
+				.or((new CrossedDownIndicatorRule(macd, emaMacd))
+				.and(new OverIndicatorRule(new RSIIndicator(closePrice, 14), 70)));
+		*/
+	    /*
+	    // Entry rule
+	    Rule entryRule = new OverIndicatorRule(macd, emaMacd)
+	    		.and(new UnderIndicatorRule(stochasticOscillK, Decimal.valueOf(20)));
+	    
+	    // Exit rule
+	    Rule exitRule = new UnderIndicatorRule(macd, emaMacd)
+	    		.and(new OverIndicatorRule(stochasticOscillK, Decimal.valueOf(80))); 
+	    		*/
+	    
+	    return new BaseStrategy(entryRule, exitRule);
 	}
 	
 	/**
 	 * Pulls data from an AWS S3 Bucket to evaluate user preferences
 	 */
-	
+	/*
 	public static void updateUserPreferences() {
 		if(counter % 4 == 2) {
 			JSONObject userPref = new JSONObject(S3Pull.readObject("user_pref/user_preferences.json"));
@@ -94,88 +195,55 @@ public class CurrencyHandler {
 			}
 		}
 	}
-	
-	/**
-	 * Calls the {@code analyzeScalp()} and {@code stopOrderScalp} as part of the default scalp strategy
-	 */
-	
-	public static void scalpStrategy() {
-		//cleanCurrency();
-		analyzeScalp();
-		stopOrderSell();
-	}
-	
-	/**
-	 * Sees if the currency is a margin above the original investment to the point where it can sell
-	 */
-	private static void analyzeScalp() {
-		for(int i = 0; i < currencyArray.length; i++) {
-			
-			if(currencyArray[i].getFiatValue() > 1) {
-				System.out.println(currencyArray[i].getCode() + ": " + currencyArray[i].getFiatValue() + ", Initial " + currencyArray[i].getInitial());
-				if(currencyArray[i].shortTermTrade()) {
-					System.out.println("Making scalp trade of " + currencyArray[i].getCode());
-					//System.out.println(currencyArray[i].formatToStandard(currencyArray[i].getScalpTrade()));
-					Orders.marketSellFiat(currencyArray[i].getCode(), currencyArray[i].getExchangeRate() * currencyArray[i].formatToStandard(currencyArray[i].getScalpTrade()));
-					currencyArray[i].getData().addOrder(currencyArray[i].getScalpTrade());
-				}
-			}
-		}
-	}
-	
-	/**
-	 * Evaluates 
-	 */
-	
-	private static void stopOrderSell() {
-		for(int i = 0; i < currencyArray.length; i++) {
-			if(currencyArray[i].stopOrderSell() && (currencyArray[i].getAmountOwned() * currencyArray[i].getExchangeRate()) > 1) {
-				System.out.println("Attempting to sell all of " + currencyArray[i].getCode());
-				double originalValue = currencyArray[i].getFiatValue();
-				Orders.marketSellFiat(currencyArray[i].getCode(), currencyArray[i].formatToStandard(currencyArray[i].getFiatValue()));
-				LocalDateTime time = LocalDateTime.now();
-				String message = "On " + time.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH) + ", " + time.getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH) + 
-						" " + time.getDayOfMonth() + ", all of your " + currencyArray[i].getName() + " was sold as it went below the desired threshold. It was worth $" + 
-						originalValue + " at the time of sale";
-				
-				MessageSender.deliverMessage("Alert: All " + currencyArray[i].getCode() + " was sold!" , message);
-				
-				//currencyArray[i].getData().soldAll(originalValue);
-			}
-		}
-	}
-	
-	/*
-	private static void cleanCurrency() {
-		for(int i = 0; i < currencyArray.length; i++) {
-			System.out.println("Attempting to clean currency " + currencyArray[i].getCode());
-			if(currencyArray[i].getFiatValue() < (currencyArray[i].getMinTradeValue() * currencyArray[i].getExchangeRate()) && currencyArray[i].getAmountOwned() > 0){
-				Orders.cleanCurrency(currencyArray[i].getCode(), currencyArray[i].getFiatValue());
-				
-			}
-		}
-	}
 	*/
 	
-	public static Currency[] sortByScalpEff() {
-		int n = currencyArray.length; 
-		  
-        for (int i = 0; i < n-1; i++) 
-        { 
-            int min_idx = i; 
-            for (int j = i+1; j < n; j++) { 
-            	double com0 = currencyArray[j].getExchangeRate() * currencyArray[j].getMinTradeValue();
-            	double com1 = currencyArray[min_idx].getExchangeRate() * currencyArray[min_idx].getMinTradeValue();
-                if (com0 < com1) 
-                    min_idx = j; 
-            }
-  
-            Currency temp = currencyArray[min_idx]; 
-            currencyArray[min_idx] = currencyArray[i]; 
-            currencyArray[i] = temp; 
-        } 
-        Currency[] ret = currencyArray;
-        return ret;
+	private static void initCurrencies(int size) {
+		String s = "2019-07-13 00:00";
+		String e = "2020-07-13 00:00";
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+		ZonedDateTime start = LocalDateTime.parse(s, formatter).atZone(ZoneId.of("Z"));
+		ZonedDateTime end = LocalDateTime.parse(e, formatter).atZone(ZoneId.of("Z"));
+		
+		for(int i = 0 ; i < currencyArray.length; i++) {
+			if(!currencyArray[i].isStable()) {
+				
+				JSONArray min = CoinCapAPI.getHistoricalRate(currencyArray[i].getCCName(), "m1");
+				//JSONArray hour = CoinCapAPI.getHistoricalRate(currencyArray[i].getCCName(), "h1");
+				//JSONArray day = CoinCapAPI.getHistoricalRate(currencyArray[i].getCCName(), "d1");
+			
+				//JSONArray min = CoinCapAPI.getRatesFromDate(currencyArray[i].getCCName(), "m1", start, end);
+				JSONArray hour = CoinCapAPI.getRatesFromDate(currencyArray[i].getCCName(), "h1", start, end);
+				JSONArray day = CoinCapAPI.getRatesFromDate(currencyArray[i].getCCName(), "d1", start, end);
+				currencyArray[i].dataInit(min, hour, day, size);
+			}
+		}
+		
+		int btcSize = currencyArray[getIndexByCode("BTC")].getSeries("h1").getBarCount();
+		for(int i = 0 ; i < currencyArray.length; i++) {
+			if(!currencyArray[i].isStable() && !currencyArray[i].getCode().equals("REP")) {
+				//System.out.println(currencyArray[i].getCode());
+				if(currencyArray[i].getSeries("h1").getBarCount() < btcSize) {
+					excluded.add(currencyArray[i].getCode());
+				}
+			} else {
+				excluded.add(currencyArray[i].getCode());
+			}
+		}
+	}
+	
+	public static boolean isExcluded(String currency) {
+		boolean isExcluded = false;
+		for(int i = 0; i < excluded.size(); i++) {
+			if(excluded.get(i).equals(currency)) {
+				isExcluded = true;
+				break;
+			}
+		}
+		return isExcluded;
+	}
+	
+	public static boolean isExcluded(int index) {
+		return isExcluded(getCodeByIndex(index));
 	}
 	
 	public static Currency getCurrencyByCode(String code) {
@@ -189,134 +257,30 @@ public class CurrencyHandler {
 		return c;
 	}
 	
-	public static String findCurrencyID(String code) {
-		String ID = "Invalid code";
-		
+	public static int getIndexByCode(String code) {
+		int index = 0;
 		for(int i = 0; i < currencyArray.length; i++) {
 			if(currencyArray[i].getCode().equals(code)) {
-				ID = currencyArray[i].getID();
+				index = i;
+				break;
 			}
 		}
-		return ID;
+		return index;
 	}
 	
-	public static void updateValues(boolean init) {
-		JSONArray rates = APICallBuilder.getMassExchangeRate();
-		JSONArray acctData = APICallPro.getAccountData();
-		
-		boolean called = false;
-		JSONObject obj = null;
-		
+	public static void initValues(int size) {
 		for(int i = 0; i < currencyArray.length; i++) {
-			String id = currencyArray[i].getCode();
-			BigDecimal rate = null;
-			double change = 0;
-			boolean cannotFind = true;
-			for(int j = 0; j < rates.length(); j++) {
-				if(rates.getJSONObject(j).getString("symbol").equals(currencyArray[i].getCode())) {
-					rate = new BigDecimal(rates.getJSONObject(j).getString("priceUsd"));
-					change = Double.parseDouble(rates.getJSONObject(j).getString("changePercent24Hr"));
-					cannotFind = false;
-					break;
-				}
-			}
+			JSONArray min = CoinCapAPI.getHistoricalRate(currencyArray[i].getCCName(), "m1");
+			JSONArray hour = CoinCapAPI.getHistoricalRate(currencyArray[i].getCCName(), "h1");
+			JSONArray day = CoinCapAPI.getHistoricalRate(currencyArray[i].getCCName(), "d1");
 			
-			if(cannotFind) {
-				//System.out.println("Cannot find " + currencyArray[i].getCode());
-				rate = new BigDecimal("1.0");
-				change = 0.0;
-			}
-			
-			double amount = 0;
-			
-			for(int j = 0; j < acctData.length(); j++) {
-				double bal = acctData.getJSONObject(j).getDouble("available");
-				if(acctData.getJSONObject(j).getString("currency").equals(id)) {
-					acctData.getJSONObject(j).getString("id");
-					amount = bal;
-					break;
-				}
-			}
-			
-			
-			
-			
-			if(init) {
-				if(!called) {
-					String data = S3Pull.readObject("user_pref/initial_invest.json");
-					obj = new JSONObject(data);
-					called = true;
-				}
-				double initial = obj.getJSONObject(currencyArray[i].getCode()).getDouble("initial");
-				currencyArray[i].dataInit(rate.doubleValue(), amount, initial, change);
-			}
-			else {
-				currencyArray[i].dataUpdate(rate.doubleValue(), amount, change);
-				
-			}
+			currencyArray[i].dataInit(min, hour, day, size);
 		}
-		
-		counter++;
-		if(counter >= COUNTER_MAX) {
-			S3Upload.uploadString(acctData.toString(1), "ids/pro-wallet-data.json");
-			counter = 0;
-		}
-        
 	}
 	
-	public static void checkUserPurchases() {
-		JSONArray orders = APICallPro.getFullOrderHistory();
-		
-		boolean modification = false;
-		boolean called = false;
-		JSONObject obj = null;
-		
-		for(int i = 0; i < orders.length(); i++) {
-			JSONObject t = orders.getJSONObject(i);
-			String time = orders.getJSONObject(i).getString("created_at");
-			time = time.replace("Z", "");
-			LocalDateTime now = LocalDateTime.parse(time);
-			long dur = Duration.between(orderCheckStamp, now).toMillis();
-			if(dur > 0) {
-				if(!called) {
-					String data = S3Pull.readObject("user_pref/initial_invest.json");
-					obj = new JSONObject(data);
-					called = true;
-				}
-				if(t.getString("side").equals("buy") && t.getString("done_reason").equals("filled") && (Double.parseDouble(t.getString("executed_value")) >= IS_USER_BUY)){
-					String productID = t.getString("product_id");
-					if(productID.contains("USDC")) {
-						productID = productID.replace("-USDC", "");
-					} else {
-						productID = productID.replace("-USD", "");
-					}
-					double value = t.getDouble("executed_value");
-					getCurrencyByCode(productID).updateInitial(value);
-					double ini = obj.getJSONObject(productID).getDouble("initial");
-					obj.getJSONObject(productID).put("initial", ini+value);
-					modification = true;
-				}
-				else if(t.getString("side").equals("sell") && t.getString("done_reason").equals("filled") && (Double.parseDouble(t.getString("executed_value")) >= PERM_SELL)){
-					String productID = t.getString("product_id");
-					if(productID.contains("USDC")) {
-						productID = productID.replace("-USDC", "");
-					} else {
-						productID = productID.replace("-USD", "");
-					}
-						
-					double value = t.getDouble("executed_value");
-					getCurrencyByCode(productID).updateInitial(-value);
-					double ini = obj.getJSONObject(productID).getDouble("initial");
-					if(ini-value < 0) obj.getJSONObject(productID).put("initial", 0);
-					else obj.getJSONObject(productID).put("initial", ini-value);
-					modification = true;
-				}
-			}
-				
-		}
-		orderCheckStamp = LocalDateTime.now(ZoneOffset.UTC);
-		if(modification) {
-			S3Upload.uploadString(obj.toString(1), "user_pref/initial_invest.json");
+	public static void addBars(String interval) {
+		for(int i = 0; i < currencyArray.length; i++) {
+			currencyArray[i].updateBar(interval);
 		}
 	}
 	

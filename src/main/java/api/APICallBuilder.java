@@ -1,9 +1,10 @@
-package coinbase;
+package api;
 
 import java.io.IOException;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 import currency.CurrencyHandler;
 import notifications.ErrorLogger;
 import okhttp3.Request;
@@ -65,6 +66,7 @@ public class APICallBuilder {
 		return par;
 	}
 	
+	/*
 	public static JSONObject convertCurrency(String fromCode, String toCode, double amount) {
 		String fromID, toID;
 		fromID = CurrencyHandler.findCurrencyID(fromCode);
@@ -95,6 +97,7 @@ public class APICallBuilder {
 		
 		return par;
 	}
+	*/
 	
 	public static JSONObject getTransactionHistory(String id) {
 		String url = APIUtility.requests.getJSONObject("transactions").getString("requestPath");

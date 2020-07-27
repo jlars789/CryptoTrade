@@ -1,6 +1,7 @@
 package threads;
 
 
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -14,6 +15,7 @@ public class CurrencyRefresh implements Runnable {
 
 	@Override
 	public void run() {
+		/*
 		LocalDateTime start = LocalDateTime.now();
 		try {
 			CurrencyHandler.checkUserPurchases();
@@ -27,8 +29,10 @@ public class CurrencyRefresh implements Runnable {
 			e.printStackTrace();
 		}
 		
+		
 		LocalDateTime finish = LocalDateTime.now();
 		System.out.println("Currency refresh completed in " + (float)(Duration.between(start, finish).toMillis())/1000 + "s");
+		*/
 		
 	}
 

@@ -21,8 +21,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import api.APIUtility;
 import aws.S3Upload;
-import coinbase.APIUtility;
+import backtest.Backtest;
 import coinbase.pro.APICallPro;
 import currency.CurrencyHandler;
 import threads.CurrencyRefresh;
@@ -33,8 +34,22 @@ public class Main {
 	public static void main(String[] args) {
 		
 		LocalDateTime init = LocalDateTime.now();
-		
+		int size = 120;
 		startUp();
+		if(args[0].equals("backtest")) {
+			if(args.length > 1) {
+				size = Integer.parseInt(args[2]);
+				CurrencyHandler.initialize(size);
+				//CurrencyHandler.runBacktestSuite(args[1], Integer.parseInt(args[2]));
+				Backtest.runSimultaneousBacktest(10000);
+			} else {
+				size = 8000;
+				CurrencyHandler.initialize(size);
+				//CurrencyHandler.runBacktestSuite("h1", size);
+				Backtest.runSimultaneousBacktest(10000);
+			}
+		} else {
+		CurrencyHandler.initialize(size);
 		LocalDateTime startUp = LocalDateTime.now();
 		System.out.println("Setup time to complete: " + ((float)(Duration.between(init, startUp).toMillis())/1000) + "s");
 		
@@ -43,6 +58,7 @@ public class Main {
 		System.out.println("Test time to complete: " + ((float)(Duration.between(startUp, test).toMillis())/1000) + "s");
 		System.out.println("Memory used: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1000000 + "MB");
 		scheduledServiceCreator();
+		}
 
 	}
 	
@@ -77,7 +93,7 @@ public class Main {
 	
 	private static void startUp() {
 		APIUtility.initialize();
-		CurrencyHandler.initialize();
+		//CurrencyHandler.initialize();
 	}
 	
 	public static final void scheduledServiceCreator() {

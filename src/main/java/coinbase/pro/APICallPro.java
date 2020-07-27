@@ -5,8 +5,8 @@ import java.io.IOException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import coinbase.APICommunicator;
-import coinbase.APIUtility;
+import api.APICommunicator;
+import api.APIUtility;
 import currency.Currency;
 import currency.CurrencyHandler;
 import notifications.ErrorLogger;
@@ -77,6 +77,7 @@ public class APICallPro {
 		convertStable("USD", "USDC", amount);
 	}
 	
+	/*
 	public static void convertCurrency(String fromCode, String toCode, double amount) {
 		Currency c0 = CurrencyHandler.getCurrencyByCode(fromCode);
 		Currency c1 = CurrencyHandler.getCurrencyByCode(toCode);
@@ -95,6 +96,7 @@ public class APICallPro {
 			Orders.marketBuyFiat(toCode, amount);
 		}
 	}
+	*/
 	
 	private static JSONObject convertStable(String fromCode, String toCode, double amount) {
 		String requestPath = APIUtility.requests.getJSONObject("convert_pro").getString("requestPath");
@@ -136,7 +138,7 @@ public class APICallPro {
 		}
 		return arr;
 	}
-	
+	/*
 	private static String getTrade(String code) {
 		Currency c = CurrencyHandler.getCurrencyByCode(code);
 		String tr = "";
@@ -145,5 +147,5 @@ public class APICallPro {
 		else tr="BTC";
 		return tr;
 	}
-
+	*/
 }
